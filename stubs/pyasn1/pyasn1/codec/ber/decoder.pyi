@@ -21,7 +21,7 @@ class AbstractPayloadDecoder:
         decodeFun: Callable[..., Incomplete] | None = None,
         substrateFun: Callable[..., Incomplete] | None = None,
         **options,
-    ) -> None: ...
+    ): ...
     # Abstract, but implementation is optional
     def indefLenValueDecoder(
         self,
