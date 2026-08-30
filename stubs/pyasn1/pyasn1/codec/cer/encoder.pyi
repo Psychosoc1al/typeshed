@@ -1,28 +1,68 @@
-from typing import ClassVar
+from _typeshed import Unused
+from collections.abc import Callable
+from typing import Any, ClassVar, Literal, SupportsBytes, overload
 
 from pyasn1.codec.ber import encoder
+from pyasn1.type.base import Asn1Type, SimpleAsn1Type
 from pyasn1.type.tag import TagSet
+from pyasn1.type.univ import OctetString, SequenceOfAndSetOfBase
 
 __all__ = ["Encoder", "encode"]
 
 class BooleanEncoder(encoder.IntegerEncoder):
-    def encodeValue(self, value, asn1Spec, encodeFun, **options): ...
+    @overload
+    def encodeValue(
+        self, value: Literal[0, False], asn1Spec: Unused, encodeFun: Unused, **options: Unused
+    ) -> tuple[tuple[Literal[0]], Literal[False], Literal[False]]: ...
+    @overload
+    def encodeValue(
+        self, value: Literal[1, True], asn1Spec: Unused, encodeFun: Unused, **options: Unused
+    ) -> tuple[tuple[Literal[255]], Literal[False], Literal[False]]: ...
+    @overload
+    def encodeValue(
+        self,
+        value: Any,  # Technically, everything not equal to `0` will return `(255,), False, False`
+        asn1Spec: Unused,
+        encodeFun: Unused,
+        **options: Unused,
+    ) -> tuple[tuple[Literal[0, 255]], Literal[False], Literal[False]]: ...
 
 class RealEncoder(encoder.RealEncoder): ...
 
 class TimeEncoderMixIn:
-    Z_CHAR: ClassVar[int]
-    PLUS_CHAR: ClassVar[int]
-    MINUS_CHAR: ClassVar[int]
-    COMMA_CHAR: ClassVar[int]
-    DOT_CHAR: ClassVar[int]
-    ZERO_CHAR: ClassVar[int]
-    MIN_LENGTH: ClassVar[int]
-    MAX_LENGTH: ClassVar[int]
-    def encodeValue(self, value, asn1Spec, encodeFun, **options): ...
+    Z_CHAR: ClassVar[int] = 90
+    PLUS_CHAR: ClassVar[int] = 43
+    MINUS_CHAR: ClassVar[int] = 45
+    COMMA_CHAR: ClassVar[int] = 44
+    DOT_CHAR: ClassVar[int] = 46
+    ZERO_CHAR: ClassVar[int] = 48
+    MIN_LENGTH: ClassVar[int] = 12
+    MAX_LENGTH: ClassVar[int] = 19
 
-class GeneralizedTimeEncoder(TimeEncoderMixIn, encoder.OctetStringEncoder): ...
-class UTCTimeEncoder(TimeEncoderMixIn, encoder.OctetStringEncoder): ...
+    @overload
+    def encodeValue(
+        self,
+        value: OctetString,
+        asn1Spec: None,
+        encodeFun: Callable[[bytes, OctetString, dict[str, Any]], bytes],  # `Any` as `encodeFun` is user-defined
+        **options: dict[str, Any],  # `options` are passed to `encodeFun()`
+    ) -> tuple[bytes, bool, Literal[True]]: ...
+    @overload
+    def encodeValue(
+        self,
+        value: str | bytes | SimpleAsn1Type | SupportsBytes,
+        asn1Spec: OctetString,
+        encodeFun: Callable[[bytes, OctetString, dict[str, Any]], bytes],  # `Any` as `encodeFun` is user-defined
+        **options: dict[str, Any],  # `options` are passed to `encodeFun()`
+    ) -> tuple[bytes, bool, Literal[True]]: ...
+
+class GeneralizedTimeEncoder(TimeEncoderMixIn, encoder.OctetStringEncoder):
+    MIN_LENGTH: ClassVar[int] = 12
+    MAX_LENGTH: ClassVar[int] = 20
+
+class UTCTimeEncoder(TimeEncoderMixIn, encoder.OctetStringEncoder):
+    MIN_LENGTH: ClassVar[int] = 10
+    MAX_LENGTH: ClassVar[int] = 14
 
 class SetOfEncoder(encoder.SequenceOfEncoder):
     def encodeValue(self, value, asn1Spec, encodeFun, **options): ...
